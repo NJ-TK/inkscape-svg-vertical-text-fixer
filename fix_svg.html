@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InkscapeのSVGを修正</title>
+</head>
+<body>
+    <input id="file_load" type="file">
+    <button id="save_button">修正版を保存</button>
+    <section id="preview"></section>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', (e) => {
+            if (window.File) {
+                const fileLoadElm = document.getElementById('file_load');
+                const previewElm = document.getElementById('preview')
+                let fileName = '無題.svg'
+                fileLoadElm.addEventListener('change', (e) => {
+                    const inputFile = event.target.files[0];
+
+                    const fileReader = new FileReader();
+
+                    fileReader.onload = (event) => {
+                        fileName = inputFile.name;
+                        const fileContent = event.target.result;
+                        previewElm.innerHTML = fileContent;
+
+                        let tspans = document.getElementsByTagName('tspan')
+
+                        // Inkscape SVGのバグを修正
+                        for (let i = 0; i<tspans.length; i++) {
+                            const t = tspans[i]
+                            if (t.style.writingMode == 'tb-rl') {
+                                t.setAttribute('x', t.parentElement.getAttribute('x'));
+                                t.setAttribute('y', t.parentElement.getAttribute('y'));
+                                t.parentElement.setAttribute('style', t.getAttribute('style'))
+                            }
+                        }
+
+                    };
+
+                    // ファイル読み込み
+                    fileReader.readAsText(inputFile);
+                });
+
+                document.getElementById('save_button').addEventListener('click', () => {
+                    const svgText =  previewElm.innerHTML
+                    const blob = new Blob([svgText], {type:'text/document'});
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = fileName;
+                    a.click()
+                });
+            } else {
+                print('File APIが利用できません')
+            }
+        })
+    </script>
+</body>
+</html>
